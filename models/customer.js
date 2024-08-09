@@ -73,6 +73,7 @@ const customerSchema = new Schema(
     gender: { type: String, required: false },
     qualification: { type: String, required: false },
     maritalStatus: { type: String, required: false },
+    referralCode: { type: String, required: false },
     referenceValue: { type: String, required: false },
     email: { type: String, required: false },
     phone: { type: Number, required: false },

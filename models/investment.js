@@ -197,6 +197,34 @@ const orderSchema = new Schema({
   orderStatus: { type: Boolean, required: false },
 });
 
+const slotbookSchema = new Schema(
+  {
+    userid: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "customer",
+      required: true,
+    },
+    dateofinvestment: { type: Date, required: true },
+    investmentamount: { type: Number, required: true },
+    investortype: { type: String, required: false },
+    plan: { type: mongoose.SchemaTypes.ObjectId, ref: "plan", required: true },
+    slot_no: { type: String, required: false },
+    agent: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "user",
+      required: true,
+    },
+    completed_at: { type: Date, required: false },
+    roleid: { type: String, required: false },
+    order_id: { type: String, required: false },
+    paymentStatus: { type: Boolean, required: false, default: false },
+    status: { type: Boolean, required: false, default: true },
+  },
+  {
+    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
+  }
+);
+
 module.exports.planSchema = planSchema;
 module.exports.agentRequestForm = agentRequestForm;
 module.exports.transactionSchema = transactionSchema;
@@ -204,3 +232,4 @@ module.exports.currencySchema = currencySchema;
 module.exports.investmentSchema = investmentSchema;
 module.exports.withdrawSchema = withdrawSchema;
 module.exports.orderSchema = orderSchema;
+module.exports.slotbookSchema = slotbookSchema;

@@ -108,7 +108,7 @@ investmentRouter.post("/assign-plan", async function (req, res) {
 });
 
 investmentRouter.post("/investment-customer-list", async function (req, res) {
-  await CustomerModel.find({})
+  await CustomerModel.find({ applicationSubmitted: true })
     .select(["_id", "firstName", "lastName", "franchise", "currentPlan"])
     .then(async (cus) => {
       CurrencyModel.find({}).then((curr) => {
@@ -192,9 +192,9 @@ investmentRouter.post("/list-transaction", async function (req, res) {
   const toDate = new Date(req.body.toDate);
   toDate.setHours(23, 59, 59, 999); // Set to the end of the day
 
-  const query = { $or: [] };
+  const query = { $or: [], $and: [] };
   if (req.body.clientId !== "") {
-    query.$or.push({ clientId: req.body.clientId });
+    query.$and.push({ clientId: req.body.clientId });
   }
   query.$or.push({
     created_at: {
@@ -202,6 +202,10 @@ investmentRouter.post("/list-transaction", async function (req, res) {
       $lte: new Date(toDate),
     },
   });
+
+  if (query.$and.length === 0) {
+    delete query.$and;
+  }
 
   TransactionModel.find(query)
     .populate({ path: "clientId", select: ["firstName", "lastName"] })
@@ -617,9 +621,9 @@ function calculateProfit(investment, monthlyProfitRate, startDate, endDate) {
 
 investmentRouter.post("/list-profit-sharing", async function (req, res) {
   let colte = [];
-  await CustomerModel.find({})
+  await CustomerModel.find({ applicationSubmitted: true })
     .populate({ path: "franchise", select: "name" })
-    .populate({ path: "currentPlan", select: "packageName" })
+    // .populate({ path: "currentPlan", select: "packageName" })
     .sort({ updated_at: -1 })
     .exec()
     .then(async (result) => {
@@ -645,6 +649,7 @@ investmentRouter.post("/list-profit-sharing", async function (req, res) {
                           customerId: cc._id,
                           status: true,
                         })
+                          .populate({ path: "planId", select: ["packageName"] })
                           .sort({ created_at: 1 })
                           .then(async function (invest) {
                             invest.length > 0 &&
@@ -668,6 +673,7 @@ investmentRouter.post("/list-profit-sharing", async function (req, res) {
                                 const bb = {
                                   investmentId: inv.investmentId,
                                   days: profit.days,
+                                  packageName: inv.planId.packageName,
                                   payAmount: profit.totalProfit.toFixed(2),
                                   investmentAmount: inv.totalAmountInvested,
                                 };
@@ -680,7 +686,7 @@ investmentRouter.post("/list-profit-sharing", async function (req, res) {
                           clientName: cc.firstName + " " + cc.lastName,
                           capitalInvested: inv1.totalAmountInvested,
                           capitalDate: inv1.created_at,
-                          packageName: cc.currentPlan.packageName,
+                          packageName: "",
                           branch: cc?.franchise?.name,
                           createdAt: inv1.created_at,
                           investments: pp,
@@ -693,6 +699,7 @@ investmentRouter.post("/list-profit-sharing", async function (req, res) {
                       customerId: cc._id,
                       status: true,
                     })
+                      .populate({ path: "planId", select: ["packageName"] })
                       .sort({ created_at: 1 })
                       .then(async function (invest) {
                         invest.length > 0 &&
@@ -719,6 +726,7 @@ investmentRouter.post("/list-profit-sharing", async function (req, res) {
                             const bb = {
                               investmentId: inv.investmentId,
                               days: profit.days,
+                              packageName: inv.planId.packageName,
                               payAmount: profit.totalProfit.toFixed(2),
                               investmentAmount: inv.totalAmountInvested,
                             };
@@ -731,7 +739,7 @@ investmentRouter.post("/list-profit-sharing", async function (req, res) {
                       clientName: cc.firstName + " " + cc.lastName,
                       capitalInvested: inv1.totalAmountInvested,
                       capitalDate: inv1.created_at,
-                      packageName: cc.currentPlan.packageName,
+                      packageName: "",
                       branch: cc?.franchise?.name,
                       createdAt: inv1.created_at,
                       investments: pp,
@@ -742,6 +750,7 @@ investmentRouter.post("/list-profit-sharing", async function (req, res) {
                 });
               }
             });
+          console.log(colte);
           if (i === result.length - 1) {
             res.send({
               status: true,
@@ -1011,9 +1020,10 @@ investmentRouter.post("/list-disburse-profit", async function (req, res) {
       withdraw.map(async (wth, i) => {
         const bb = {
           initiatedOn: wth.created_at,
-          initiatedBy: wth.initiateBy.name,
-          clientName: wth.customerId.firstName + " " + wth.customerId.lastName,
-          clientId: wth.customerId.customerId,
+          initiatedBy: wth?.initiateBy?.name,
+          clientName:
+            wth.customerId?.firstName + " " + wth.customerId?.lastName,
+          clientId: wth.customerId?.customerId,
           withdrawDesc: wth.withdrawDesc,
           withdrawAmount: wth.paidAmount,
           withdrawId: wth._id,

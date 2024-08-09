@@ -32,6 +32,7 @@ const userSchema = new Schema(
     verificationLink: { type: String, required: false },
     emailVerified: { type: Boolean, required: false },
     affiliateCode: { type: String, required: false },
+    referralCode: { type: String, required: false },
     referralId: { type: String, required: false },
     verified: { type: Boolean, required: false },
     details: { type: String, required: false },

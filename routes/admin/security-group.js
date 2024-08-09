@@ -15,6 +15,7 @@ securityGroupRouter.get("/list-security-group", function (req, res) {
 });
 
 securityGroupRouter.get("/load-security-group-schema", function (req, res) {
+  // console.log(SGModel);
   res.send({ status: true, message: "Security group schema", data: SGModel });
 });
 

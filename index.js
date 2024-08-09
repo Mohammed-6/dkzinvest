@@ -21,12 +21,15 @@ const clientUploadRouter = require("./routes/client/upload");
 const dashboardRoute = require("./routes/client/dashboard");
 const profileRoute = require("./routes/client/profile");
 
+const agentDashboardRoute = require("./routes/agent/dashboard");
+const standardRoute = require("./routes/agent/standard");
+
 const app = express();
 
 app.use("/public", express.static("public"));
 
 mongoose.connect(
-  "mongodb+srv://rehankhan:B7uzwg8DlkIUJ9xb@cluster0.yimbm.mongodb.net/dkz?retryWrites=true&w=majority"
+  "mongodb+srv://rehan:CyOPt9nXE0eC24va@cluster0.4bixcec.mongodb.net/dkz?retryWrites=true&w=majority"
 );
 
 app.use(bodyParser.json());
@@ -39,6 +42,9 @@ app.use("/c1", onboardRoute);
 app.use("/c1", clientUploadRouter);
 app.use("/c1", dashboardRoute);
 app.use("/c1", profileRoute);
+// agent
+app.use("/c2", agentDashboardRoute);
+app.use("/c2", standardRoute);
 // admin
 // app.use(authMiddleware);
 // logger

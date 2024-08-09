@@ -60,6 +60,8 @@ userRouter.get("/load-user-props", async function (req, res) {
 
 userRouter.post("/create-user", async function (req, res) {
   let colte = req.body;
+
+  colte.referralCode = "AGT" + makeid(6).toUpperCase();
   getUserCount().then(function (userCount) {
     console.log(userCount);
     if (userCount === 0) {

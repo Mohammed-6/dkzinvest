@@ -23,28 +23,24 @@ reportRouter.get("/report-plan", async function (req, res) {
       plans.map(async function (plan, i) {
         let balance = 0;
         let cusCount = 0;
-        await CustomerModel.find({ currentPlan: plan._id }).then(
-          async function (cus) {
-            cus.map(async (cc, x) => {
-              await TransactionModel.findOne({ clientId: cc._id })
-                .sort({ created_at: -1 })
-                .then(async function (trans) {
-                  balance += trans.balance;
-                  cusCount += 1;
-                });
-              const bb = {
-                planId: plan._id,
-                planName: plan.packageName,
-                balance: balance,
-                customerCount: cusCount,
-              };
-              colte.push(bb);
-              if (x === cus.length - 1) {
-                res.send({ status: true, message: "Plan count", data: colte });
-              }
+        await InvestmentModel.find({ planId: plan._id })
+          .sort({ created_at: -1 })
+          .then(async function (trans) {
+            trans.map((dd) => {
+              balance += dd.investmentAmount;
+              cusCount += 1;
             });
-          }
-        );
+          });
+        const bb = {
+          planId: plan._id,
+          planName: plan.packageName,
+          balance: balance,
+          customerCount: cusCount,
+        };
+        colte.push(bb);
+        if (i === plans.length - 1) {
+          res.send({ status: true, message: "Plan count", data: colte });
+        }
       });
     })
     .catch(function (err) {
@@ -55,47 +51,39 @@ reportRouter.get("/report-plan", async function (req, res) {
 reportRouter.post("/plan-wise-users", async function (req, res) {
   let colte = [];
   let packagee = "";
-  await CustomerModel.find({ currentPlan: req.body.currentPlan })
-    .populate({ path: "franchise", select: "name" })
-    .populate({ path: "branch", select: "name" })
-    .populate({ path: "currentPlan", select: "packageName" })
-    .populate({ path: "createdBy", select: "name" })
-    .sort({ updated_at: -1 })
-    .exec()
-    .then(async (result) => {
-      // console.log(result);
-      result.map(async (cc, i) => {
-        await TransactionModel.findOne({ clientId: cc._id })
-          .sort({ created_at: -1 })
-          .then(async function (trans1) {
-            await TransactionModel.findOne({ clientId: cc._id })
-              .sort({ created_at: 1 })
-              .then(async function (trans) {
-                const bb = {
-                  clientId: cc._id,
-                  customerId: cc.customerId,
-                  clientName: cc.firstName + " " + cc.lastName,
-                  capitalInvested: trans1.balance,
-                  capitalDate: trans.created_at,
-                  maturityDate: trans.maturityDate,
-                  payoutOutTimePeriod: "1 Month",
-                  branch: cc?.franchise?.name,
-                  createdBy: cc.createdBy.name,
-                  createdAt: trans.created_at,
-                };
-                packagee = cc.currentPlan.packageName;
-                colte.push(bb);
-              });
-          });
-        if (i === result.length - 1) {
-          res.send({
-            status: true,
-            message: "Fetch Successfully",
-            data: colte,
-            package: packagee,
-          });
-        }
-      });
+  await TransactionModel.find({ planId: req.body.currentPlan })
+    .populate({
+      path: "clientId",
+      select: ["_id", "firstName", "lastName", "customerId"],
+    })
+    .sort({ created_at: -1 })
+    .then(async function (tran) {
+      tran !== null &&
+        tran.map((trans, i) => {
+          const bb = {
+            clientId: trans.clientId,
+            customerId: trans?.clientId?.customerId,
+            clientName:
+              trans?.clientId?.firstName + " " + trans?.clientId?.lastName,
+            capitalInvested: trans.amount,
+            capitalDate: trans?.created_at,
+            maturityDate: trans?.maturityDate,
+            payoutOutTimePeriod: "1 Month",
+            branch: "",
+            createdBy: "",
+            createdAt: trans?.created_at,
+          };
+          packagee = "";
+          colte.push(bb);
+          if (i === tran.length - 1) {
+            res.send({
+              status: true,
+              message: "Fetch Successfully",
+              data: colte,
+              package: packagee,
+            });
+          }
+        });
     });
 });
 
@@ -189,10 +177,11 @@ reportRouter.post("/list-plan-expires", async function (req, res) {
           .then(async function (trans) {
             const bb = {
               investmentId: trans._id,
-              customerId: cc.clientId.customerId,
-              clientName: cc.clientId.firstName + " " + cc.clientId.lastName,
+              customerId: cc?.clientId?.customerId,
+              clientName:
+                cc?.clientId?.firstName + " " + cc?.clientId?.lastName,
               capitalInvested: trans.totalAmountInvested,
-              phone: cc.clientId.phone,
+              phone: cc?.clientId?.phone,
               maturityDate: cc.maturityDate,
               branch: cc?.branch?.name,
             };
